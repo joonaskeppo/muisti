@@ -169,32 +169,25 @@
   (and (re-find (:ordered-bullet regexes) (rem-src scanner))
        (empty? (get-non-blank-tokens scanner))))
 
-(def text-formatters
-  {::bold          \*
-   ::italic        \/
-   ::underline     \_
-   ::code-inline   \`
-   ::strikethrough \~})
-
 (defn formatting?
-  "Inline formatting character, `ch`?"
-  [type]
-  (let [ch (get text-formatters type)]
-    (fn [scanner]
-      (and (= ch (current-char scanner))
-           (not= \\ (previous-char scanner))))))
+  "Inline formatting character, `ch`?
+  Ignored if preceded by escape character."
+  [ch]
+  (fn [scanner]
+    (and (= ch (current-char scanner))
+         (not= \\ (previous-char scanner)))))
 
 (def bold?
-  (formatting? ::bold))
+  (formatting? \*))
 
 (def italic?
-  (formatting? ::italic))
+  (formatting? \/))
 
 (def code-inline?
-  (formatting? ::code-inline))
+  (formatting? \`))
 
 (def strikethrough?
-  (formatting? ::strikethrough))
+  (formatting? \~))
 
 (defn code-block?
   [scanner]
