@@ -53,23 +53,24 @@
   ([dir]
    (get-dir-contents dir nil))
   ([dir opts]
-   (let [dir (normalize-path dir)]
-     (->> (clojure.java.io/file dir)
-          file-seq
-          (keep (fn [v]
-                  (let [is-file   (.isFile v)
-                        is-dir    (.isDirectory v)
-                        is-hidden (.isHidden v)]
-                    (when (and (or (:hidden opts) (not is-hidden))
-                               (or (:dotfile-or-dir opts)
-                                   (->> (.getCanonicalPath v)
-                                        vectorize-path
-                                        (not-any? #(str/starts-with? % ".")))))
-                      (cond
-                        is-dir  [:dirs v]
-                        is-file [:files v])))))
-          (group-by first)
-          (fmap #(map second %))))))
+   (let [dir  (normalize-path dir)
+         data (->> (clojure.java.io/file dir)
+                   file-seq
+                   (keep (fn [v]
+                           (let [is-file   (.isFile v)
+                                 is-dir    (.isDirectory v)
+                                 is-hidden (.isHidden v)]
+                             (when (and (or (:hidden opts) (not is-hidden))
+                                        (or (:dotfile-or-dir opts)
+                                            (->> (.getCanonicalPath v)
+                                                 vectorize-path
+                                                 (not-any? #(str/starts-with? % ".")))))
+                               (cond
+                                 is-dir  [:dirs v]
+                                 is-file [:files v])))))
+                   (group-by first)
+                   (fmap #(map second %)))]
+     (assoc data :root-path dir))))
 
 (defn read-project-file [dir file]
   (->> (file-seq (clojure.java.io/file dir))
