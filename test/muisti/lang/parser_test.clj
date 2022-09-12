@@ -133,42 +133,30 @@
   ;; TODO: trying to parse a :link without `root-path` should return an error
   (testing "with :link component"
     (let [output          (parser/parse "[:link [literature nineteen-eighty-four] *Orwell's /Majestic/ Book*]"
-                                        {:root-path "/notes/"})
-          component-token {:line   1
-                           :value  nil
-                           :type   ::tk/component
-                           :lexeme "[:link [literature nineteen-eighty-four] *Orwell's /Majestic/ Book*]"}]
+                                        {:root-path "/notes/"})]
       (is (= [:div [:p [:a {:href "/notes/literature/nineteen-eighty-four"}
                         [:strong "Orwell's " [:em "Majestic"] " Book"]]]]
              (:hiccup output)))
-      (is (= {:links {component-token ["literature" "nineteen-eighty-four"]}}
+      (is (= {:links #{{:note/id ["literature" "nineteen-eighty-four"]}}}
              (:attrs output)))))
   (testing "with :tag component"
-    (let [output          (parser/parse "[:tag [:test/tag :other/tag] *Orwell's /Majestic/ Book*]")
-          component-token {:line   1
-                           :value  nil
-                           :type   ::tk/component
-                           :lexeme "[:tag [:test/tag :other/tag] *Orwell's /Majestic/ Book*]"}]
+    (let [output          (parser/parse "[:tag [:test/tag :other/tag] *Orwell's /Majestic/ Book*]")]
       (is (= [:div [:p [:span [:strong "Orwell's " [:em "Majestic"] " Book"]]]]
              (:hiccup output)))
-      (is (= {:tags {component-token [:test/tag :other/tag]}}
+      (is (= {:tags #{[:test/tag :other/tag]}}
              (:attrs output)))))
-  (testing "with :link component inside :tag component"
-    (let [output     (parser/parse "\n\n[:tag [:nesting :wow]\n\n[:link [lit book] /Book/]]"
-                                   {:root-path "/notes/"})
-          tag-token  {:line   3
-                      :value  nil
-                      :type   ::tk/component
-                      :lexeme "[:tag [:nesting :wow]\n\n[:link [lit book] /Book/]]"}
-          link-token {:line   5
-                      :value  nil
-                      :type   ::tk/component
-                      :lexeme "[:link [lit book] /Book/]"}]
-      (is (= {:links {link-token ["lit" "book"]}
-              :tags  {tag-token [:nesting :wow]}}
+  (testing "with :link components inside :tag component"
+    (let [output     (parser/parse "\n\n[:tag [:nesting :wow]\n\n[:link [lit book] /Book/]\n[:link [another thing] My Thing]]"
+                                   {:root-path "/notes/"})]
+      (is (= {:links #{{:note/id ["lit" "book"]}
+                       {:note/id ["another" "thing"]}}
+              :tags  #{[:nesting :wow]}}
              (:attrs output)))
-      (is (= [:div [:p [:span [:a {:href "/notes/lit/book"}
-                               [:em "Book"]]]]]
+      (is (= [:div [:p [:span
+                        [:a {:href "/notes/lit/book"}
+                         [:em "Book"]]
+                        [:a {:href "/notes/another/thing"}
+                         "My Thing"]]]]
              (:hiccup output)))))
   (testing "with hiccup fallback component, without props"
     (let [output (parser/parse "[:mark /highlighted/]")]
@@ -182,16 +170,20 @@
              (:hiccup output)))))
   (testing "with :link component inside hiccup fallback"
     (let [output     (parser/parse "[:mark [:link [my thing] Book Notes]]"
-                                   {:root-path "/notes/"})
-          link-token {:line   1
-                      :value  nil
-                      :type   ::tk/component
-                      :lexeme "[:link [my thing] Book Notes]"}]
-      (is (= {:links {link-token ["my" "thing"]}}
+                                   {:root-path "/notes/"})]
+      (is (= {:links #{{:note/id ["my" "thing"]}}}
              (:attrs output)))
       (is (= [:div [:p [:mark
                         [:a {:href "/notes/my/thing"}
                          "Book Notes"]]]]
+             (:hiccup output)))))
+  (testing "with :link component around text"
+    (let [output (parser/parse "Test link: [:link [projects mu] my link]!"
+                               {:root-path "/notes/"})]
+      (is (= {:links #{{:note/id ["projects" "mu"]}}}
+             (:attrs output)))
+      (is (= [:div
+              [:p "Test link: " [:a {:href "/notes/projects/mu"} "my link"] "!"]]
              (:hiccup output))))))
 
 (deftest test-blockquotes

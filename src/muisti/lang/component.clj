@@ -81,7 +81,7 @@
   (let [[destination title] (extract input token [::vector (parse-fn {:modifier :verbatim})])
         to                  (mapv str destination)]
     (-> title
-        (update :attrs deep-merge {:links {token to}})
+        (update :attrs deep-merge {:links #{{:note/id to}}})
         (update :hiccup (fn [inner]
                           (into [:a {:href (resolve-uri env to)}] inner))))))
 
@@ -89,7 +89,7 @@
   [{:keys [input token parse-fn]}]
   (let [[tags content] (extract input token [::vector (parse-fn {:modifier :inline})])]
     (-> content
-        (update :attrs deep-merge {:tags {token tags}}))))
+        (update :attrs deep-merge {:tags #{tags}}))))
 
 (defmethod parse :default
   [{:keys [type input token parse-fn]}]
