@@ -2,6 +2,7 @@
 .idea
 *.log
 tmp/
+.dir-locals.el
 
 .clj-kondo
 .lsp
