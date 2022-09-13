@@ -124,7 +124,7 @@
 (def regexes
   "Some regexes to check for token existence, *not* for parsing"
   {:tab              #"^(\t|\s{2,})"
-   :component        #"^\[:[a-zA-Z\*\+\!\-\_\?](.|\s)*\]"
+   :component        #"^\[:[a-zA-Z\d\*\+\!\-\_\?]+\s+"
    :heading          #"^\s*\#{1,}\s+[^\s]+"
    :unordered-bullet #"^(\-|\*|\+)\s+"
    :ordered-bullet   #"^\d+\.\s+"
