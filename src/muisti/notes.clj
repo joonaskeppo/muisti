@@ -61,16 +61,21 @@
           res))
     (build-manifest* dir-contents file)))
 
-(def parse-note
-  (comp parser/parse slurp))
+(defn parse-note
+  [file env]
+  (parser/parse (slurp file) env))
 
 (defn parse-notes
-  [{:keys [files] :as dir-contents}]
-  (into {}
-        (comp (filter note-file?)
-              (map (fn [file]
-                     [(canonize-notes-path dir-contents file) (parse-note file)])))
-        files))
+  ([dir-contents]
+   (parse-notes dir-contents {}))
+  ([{:keys [files] :as dir-contents} env]
+   (into {}
+         (comp (filter note-file?)
+               (map (fn [file]
+                      (let [path      (canonize-notes-path dir-contents file)
+                            note-data (parse-note file env)]
+                        [path note-data]))))
+         files)))
 
 ;; TODO: refactor so that this fn would be unnecessary
 (defn flatten-note
@@ -81,13 +86,15 @@
 
 (defn bundle-note
   "Bundle note data with manifest data"
-  [dir-contents file]
-  (let [manifest-data (build-manifest dir-contents file)
-        note-id       (canonize-notes-path dir-contents file)]
-    (-> (parse-note file)
-        (assoc :id note-id)
-        (update :attrs #(deep-merge manifest-data %))
-        flatten-note)))
+  ([dir-contents file]
+   (bundle-note dir-contents file {:root-path ""}))
+  ([dir-contents file env]
+   (let [manifest-data (build-manifest dir-contents file)
+         note-id       (canonize-notes-path dir-contents file)]
+     (-> (parse-note file env)
+         (assoc :id note-id)
+         (update :attrs #(deep-merge manifest-data %))
+         flatten-note))))
 
 (defn bundle-notes
   "Bundle all note data with their respective manifest data"
@@ -99,11 +106,6 @@
 
 (comment
   (clear-manifests-cache)
-
-  (let [dir-contents (get-dir-contents "~/notes")]
-    (parse-notes dir-contents))
-
-  (parse-note (->> "~/notes" get-dir-contents :files (filter note-file?) first))
 
   (let [dir-contents (get-dir-contents "~/notes")
         file         (->> dir-contents :files (filter note-file?) first)]
