@@ -1,0 +1,16 @@
+name: test
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          cli: 1.11.1 # Clojure CLI, tools.deps
+
+      - name: Run unit tests
+        run: bin/kaocha
