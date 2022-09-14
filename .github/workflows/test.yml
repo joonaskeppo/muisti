@@ -10,7 +10,7 @@ jobs:
       - name: Setup Clojure
         uses: DeLaGuardo/setup-clojure@master
         with:
-          cli: 1.11.1 # Clojure CLI, tools.deps
+          cli: "latest" # Clojure CLI, tools.deps
 
       - name: Run unit tests
         run: bin/kaocha
