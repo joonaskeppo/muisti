@@ -301,7 +301,7 @@
   (let [{:keys [lexeme]} (peek parser)]
     (-> parser
         advance
-        (update-in [:output :hiccup] conj [:code lexeme]))))
+        (update-in [:output :hiccup] conj [:pre lexeme]))))
 
 (defmethod parse-token-group ::tk/text
   [parser]
@@ -323,13 +323,6 @@
   (parse-inline-formatter [::tk/strikethrough :del] parser))
 
 (defmethod parse-token-group ::tk/code-inline
-  [parser]
-  (let [{:keys [lexeme]} (peek parser)]
-    (-> parser
-        advance
-        (update-in [:output :hiccup] conj [:pre lexeme]))))
-
-(defmethod parse-token-group ::tk/code-block
   [parser]
   (let [{:keys [lexeme]} (peek parser)]
     (-> parser
