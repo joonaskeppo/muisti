@@ -61,6 +61,9 @@
           res))
     (build-manifest* dir-contents file)))
 
+(def default-env
+  {:root-path ""})
+
 (defn parse-note
   [file env]
   (parser/parse (slurp file) env))
@@ -87,7 +90,7 @@
 (defn bundle-note
   "Bundle note data with manifest data"
   ([dir-contents file]
-   (bundle-note dir-contents file {:root-path ""}))
+   (bundle-note dir-contents file default-env))
   ([dir-contents file env]
    (let [manifest-data (build-manifest dir-contents file)
          note-id       (canonize-notes-path dir-contents file)]
@@ -98,11 +101,19 @@
 
 (defn bundle-notes
   "Bundle all note data with their respective manifest data"
-  [{:keys [files] :as dir-contents}]
-  (into []
-        (comp (filter note-file?)
-              (map #(bundle-note dir-contents %)))
-        files))
+  ([dir-contents]
+   (bundle-notes dir-contents default-env))
+  ([{:keys [files] :as dir-contents} env]
+   (into []
+         (comp (filter note-file?)
+               (map #(bundle-note dir-contents % env)))
+         files)))
+
+(def bundle
+  "Bundle all note data with their respective manifest data.
+  Expects an absolute path as string."
+  (comp bundle-notes
+        get-dir-contents))
 
 (comment
   (clear-manifests-cache)
