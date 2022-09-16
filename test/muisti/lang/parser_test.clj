@@ -2,8 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [muisti.utils :refer [read-project-file]]
             [muisti.lang.utils :refer [empty-hiccup?]]
-            [muisti.lang.parser :as parser]
-            [muisti.lang.tokenizer :as tk]))
+            [muisti.lang.parser :as parser]))
 
 (deftest test-empty
   (testing "with zero-length input"
@@ -66,7 +65,7 @@
   (testing "with inline code"
     (let [output (parser/parse "Hello with `code`.")]
       (is (empty? (:attrs output)))
-      (is (= [:div [:p "Hello with " [:pre "code"] "."]]
+      (is (= [:div [:p "Hello with " [:code "code"] "."]]
              (:hiccup output))))))
 
 (deftest test-lists
@@ -126,7 +125,7 @@
   (testing "with multiline code block"
     (let [output (parser/parse "```\nMultiline\ncode\nblock\n```")]
       (is (empty? (:attrs output)))
-      (is (= [:div [:code "Multiline\ncode\nblock"]]
+      (is (= [:div [:pre "Multiline\ncode\nblock"]]
              (:hiccup output))))))
 
 (deftest test-components
