@@ -242,6 +242,18 @@
         advance
         (update :output deep-merge (update output :hiccup #(conj [] %))))))
 
+(defn combine-texts
+  "Concatenates contiguous strings (of a paragraph).
+  This is done because newlines within paragraphs should map into a single space."
+  [texts]
+  (->> texts
+       (reduce (fn [[last-text :as acc] v]
+                 (if (and (string? v) (string? last-text))
+                   (cons (format "%s %s" last-text v) (rest acc))
+                   (cons v acc)))
+               '())
+       reverse))
+
 ;; --- token groups ---
 
 (defmulti parse-token-group
@@ -258,11 +270,12 @@
 (defmethod parse-token-group :paragraph
   [parser]
   (let [parser       (advance-while parser #(= ::tk/newline (peek-type %)))
-        inner-parser (parse-until {:pred end-nested-context? :parser parser :context "paragraph"})]
+        inner-parser (parse-until {:pred end-nested-context? :parser parser :context "paragraph"})
+        inner-hiccup (combine-texts (get-in inner-parser [:output :hiccup]))]
     (-> parser
         (assoc :current (:current inner-parser))
         (update-in [:output :attrs] deep-merge (get-in inner-parser [:output :attrs]))
-        (update-in [:output :hiccup] conj (into [:p] (get-in inner-parser [:output :hiccup]))))))
+        (update-in [:output :hiccup] conj (into [:p] inner-hiccup)))))
 
 ;; a special type of newline that doesn't delineate paragraphs
 (defmethod parse-token-group ::tk/newline

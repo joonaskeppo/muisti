@@ -9,10 +9,10 @@
     (let [output (parser/parse "")]
       (is (empty? (:attrs output)))
       (is (empty-hiccup? (:hiccup output)))))
-  (testing "with whitespace-only input")
-  (let [output (parser/parse "   \t \n \r   \n")]
-    (is (empty? (:attrs output)))
-    (is (empty-hiccup? (:hiccup output)))))
+  (testing "with whitespace-only input"
+    (let [output (parser/parse "   \t \n \r   \n")]
+      (is (empty? (:attrs output)))
+      (is (empty-hiccup? (:hiccup output))))))
 
 (deftest test-front-matters
   (testing "with valid edn front matter"
@@ -40,7 +40,7 @@
   (testing "with multiple lines of a single paragraph of unformatted text"
     (let [output (parser/parse "Hello there.\nAnother sentence.")]
       (is (empty? (:attrs output)))
-      (is (= [:div [:p "Hello there." "Another sentence."]]
+      (is (= [:div [:p "Hello there. Another sentence."]]
              (:hiccup output)))))
   (testing "with multiple paragraphs of unformatted text"
     (let [output (parser/parse "Hello there.\n\nAnother paragraph.\n\n\nThird paragraph.")]
@@ -202,9 +202,9 @@
                     [:p "second"]]]
              (:hiccup output)))))
   (testing "with two blockquotes"
-    (let [output (parser/parse "> first line\n\t > second\n\n> new quote")]
+    (let [output (parser/parse "> first line.\n\t > second.\n\n> new quote")]
       (is (empty? (:attrs output)))
       (is (= [:div
-              [:blockquote [:p "first line" "second"]]
+              [:blockquote [:p "first line. second."]]
               [:blockquote [:p "new quote"]]]
              (:hiccup output))))))
