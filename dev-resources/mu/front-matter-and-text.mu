@@ -1,4 +1,4 @@
-{:author "Joonas Keppo"
- :tags   [:example :mdc]}
+:author "Joonas Keppo"
+:tags   [:example :mdc]
 
 Some text here.

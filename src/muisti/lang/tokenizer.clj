@@ -66,28 +66,33 @@
         (update scanner :tokens (comp #(cons token* %) rest)))
       (add-token scanner {:type ::text :lexeme (str text)}))))
 
-(defn extract-edn-map [src]
-  (when (= \{ (first src))
-    (loop [opening-brackets 0
-           closing-brackets 0
-           src*             src
-           map-str          ""]
-      (cond
-        (and (> opening-brackets 0)
-             (= opening-brackets closing-brackets))
-        map-str
+(defn multiple-newlines?
+  "Does `src` start with whitespace containing two or more newlines?"
+  [src]
+  (->> src (take-while #(Character/isWhitespace %)) (filter #(= \newline %)) count (<= 2)))
 
-        (empty? src*)
-        nil
+(declare regexes)
 
-        :else
-        (let [[ch :as src*] src*
-              map-str       (str map-str ch)
-              src*          (subs src* 1)]
-          (case ch
-            \{ (recur (inc opening-brackets) closing-brackets src* map-str)
-            \} (recur opening-brackets (inc closing-brackets) src* map-str)
-            (recur opening-brackets closing-brackets src* map-str)))))))
+(defn extract-front-matter
+  "Extracts front matter.
+  Assumes newline-separated key-value pairs, where keys are keywords and values are any EDN values."
+  [src]
+  (loop [src* src
+         fm-str ""]
+    (cond
+      (or (multiple-newlines? src*) (str/blank? src*))
+      fm-str
+
+      (Character/isWhitespace (first src*))
+      (recur (subs src* 1) (str fm-str (first src*)))
+
+      (re-find (:keyword regexes) (str/triml src*))
+      (let [line      (->> src* (take-while #(not= \newline %)) (apply str))
+            remainder (->> src* (drop-while #(not= \newline %)) (apply str))]
+        (recur remainder (str fm-str line)))
+
+      :else
+      nil)))
 
 (defn get-line-tokens [{:keys [tokens line] :as _scanner}]
   (take-while #(= line (:line %)) tokens))
@@ -119,11 +124,12 @@
 
 (defn front-matter? [{:keys [tokens] :as scanner}]
   (and (not (some #(not= ::newline (:type %)) tokens))
-       (extract-edn-map (str/triml (rem-src scanner)))))
+       (extract-front-matter (str/triml (rem-src scanner)))))
 
 (def regexes
   "Some regexes to check for token existence, *not* for parsing"
   {:tab              #"^(\t|\s{2,})"
+   :keyword          #"^:[a-zA-Z\d\*\+\!\-\_\?]+"
    :component        #"^\[:[a-zA-Z\d\*\+\!\-\_\?]+\s+"
    :heading          #"^\s*\#{1,}\s+[^\s]+"
    :unordered-bullet #"^(\-|\*|\+)\s+"
@@ -198,10 +204,10 @@
 
 (defn scan-front-matter [scanner]
   (let [scanner (advance-while scanner blank?)]
-    (if-let [edn-map-str (extract-edn-map (rem-src scanner))]
+    (if-let [fm-str (extract-front-matter (rem-src scanner))]
       (-> scanner
-          (add-token {:type ::front-matter :lexeme edn-map-str})
-          (advance (count edn-map-str))
+          (add-token {:type ::front-matter :lexeme fm-str})
+          (advance (count fm-str))
           (advance-while newline?)) ;; remove any blank lines prior to actual content
       (-> scanner
           (add-error "Unable to scan front matter")

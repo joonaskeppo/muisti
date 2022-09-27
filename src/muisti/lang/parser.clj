@@ -289,10 +289,10 @@
 
 (defmethod parse-token-group ::tk/front-matter
   [parser]
-  (let [{:keys [lexeme]} (peek parser)]
+  (let [edn-str (format "{%s}" (:lexeme (peek parser)))]
     (-> parser
         advance
-        (assoc-in [:output :attrs :front-matter] (edn/read-string lexeme)))))
+        (assoc-in [:output :attrs :front-matter] (edn/read-string edn-str)))))
 
 (defmethod parse-token-group ::tk/blockquote
   [{:keys [env] :as parser}]

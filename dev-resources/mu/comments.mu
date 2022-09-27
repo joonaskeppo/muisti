@@ -3,8 +3,8 @@
 ;; and newlines too
 
 
-{:author "Joonas Keppo"
- :tags   [:example :mdc]}
+:author "Joonas Keppo"
+:tags   [:example :mdc]
 
 ; [:div "ignore me pls"]
 ; *ignored text*

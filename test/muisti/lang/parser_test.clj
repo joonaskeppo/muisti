@@ -16,8 +16,8 @@
 
 (deftest test-front-matters
   (testing "with valid edn front matter"
-    (let [input-1  "{:a 1 :b [:some :keyword] :c 100}"
-          input-2  "\n \t{:a 1\n\t:b    [:some\n:keyword] :c\t 100}\t \n"
+    (let [input-1  ":a 1 :b [:some :keyword] :c 100"
+          input-2  "\n \t:a 1\n\t:b    [:some\n:keyword] :c\t 100\t \n"
           output-1 (parser/parse input-1)
           output-2 (parser/parse input-2)]
       (is (= output-1 output-2))

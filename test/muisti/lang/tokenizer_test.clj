@@ -29,7 +29,7 @@
 (deftest test-front-matter
   (testing-tokens-as-equal-to
    "front-matter-and-text"
-   [{:type ::tk/front-matter :line 1 :lexeme "{:author \"Joonas Keppo\"\n :tags   [:example :mdc]}"}
+   [{:type ::tk/front-matter :line 1 :lexeme ":author \"Joonas Keppo\"\n:tags   [:example :mdc]"}
     {:type ::tk/text :lexeme "Some text here." :line 4}
     {:type ::tk/eof :line 5}]))
 
@@ -37,7 +37,7 @@
   (testing-tokens-as-equal-to
    "comments"
     ;; comments are completely ignored
-   [{:type ::tk/front-matter :line 6 :lexeme "{:author \"Joonas Keppo\"\n :tags   [:example :mdc]}"}
+   [{:type ::tk/front-matter :line 6 :lexeme ":author \"Joonas Keppo\"\n:tags   [:example :mdc]"}
     {:type ::tk/newline :line 11}
     {:type ::tk/text :lexeme "Some text here." :line 11}
     {:type ::tk/eof :line 12}]))
