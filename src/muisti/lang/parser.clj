@@ -156,7 +156,7 @@
 (declare parse parse-token-group)
 
 (defn parse-until
-  [{:keys [pred parser context]}]
+  [pred parser context]
   (loop [[last-parser :as parsers] (list (assoc parser :output {:attrs {} :hiccup []}))]
     (cond
       (empty? (get-next-tokens last-parser))
@@ -178,10 +178,10 @@
 
 (defn parse-inline-formatter
   [[token-type html-elt] parser]
-  (let [inner-parser (parse-until {:pred    (fn [inner-parser]
-                                              (= token-type (peek-type inner-parser)))
-                                   :parser  (advance parser)
-                                   :context "inline formatter"})]
+  (let [inner-parser (parse-until (fn [inner-parser]
+                                    (= token-type (peek-type inner-parser)))
+                                   (advance parser)
+                                   "inline formatter")]
     (-> parser
         (update-in [:output :hiccup] conj (into [html-elt] (get-in inner-parser [:output :hiccup])))
         (update-in [:output :attrs] deep-merge (get-in inner-parser [:output :attrs]))
@@ -194,9 +194,9 @@
   (let [pre-list-item? #(#{::tk/tab ::tk/unordered-bullet ::tk/ordered-bullet} (peek-type %))
         inner-parser   (if (and (> (:current parser) list-start-idx) (nest-list? parser))
                          (parse-list parser)
-                         (parse-until {:pred    (some-fn new-list-item? end-list?)
-                                       :parser  (advance-while parser pre-list-item?)
-                                       :context "list item"}))]
+                         (parse-until (some-fn new-list-item? end-list?)
+                                      (advance-while parser pre-list-item?)
+                                      "list item"))]
     (-> parser
         (assoc :current (:current inner-parser))
         (update-in [:output :attrs] deep-merge (get-in inner-parser [:output :attrs]))
@@ -270,7 +270,7 @@
 (defmethod parse-token-group :paragraph
   [parser]
   (let [parser       (advance-while parser #(= ::tk/newline (peek-type %)))
-        inner-parser (parse-until {:pred end-nested-context? :parser parser :context "paragraph"})
+        inner-parser (parse-until end-nested-context? parser "paragraph")  
         inner-hiccup (combine-texts (get-in inner-parser [:output :hiccup]))]
     (-> parser
         (assoc :current (:current inner-parser))
