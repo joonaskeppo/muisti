@@ -115,11 +115,20 @@
                       [:li "2"]
                       [:li "3"]]]]]
              (:hiccup output)))))
-  (testing "with nested ordered list"
-    (let [output (parser/parse "1. Hello\n\t1. There")]
-      (is (empty? (:attrs output)))
-      (is (= [:div [:p [:ol [:li "Hello"] [:ol [:li "There"]]]]]
-             (:hiccup output))))))
+  (testing "with unordered list containing ordered list"
+    (let [src    (read-project-file "dev-resources" "unordered-with-ordered-list.mu")
+          output (parser/parse src)]
+      (is (= [:div [:p [:ul
+                        [:li "Things"]
+                        [:ol
+                         [:li "Hey"]
+                         [:li "There"]]]]]
+             (:hiccup output))))
+    (testing "with nested ordered list"
+      (let [output (parser/parse "1. Hello\n\t1. There")]
+        (is (empty? (:attrs output)))
+        (is (= [:div [:p [:ol [:li "Hello"] [:ol [:li "There"]]]]]
+               (:hiccup output))))))
 
 (deftest test-code-blocks
   (testing "with multiline code block"

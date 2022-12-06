@@ -192,7 +192,12 @@
 (defn parse-list-item
   [parser list-start-idx]
   (let [pre-list-item? #(#{::tk/tab ::tk/unordered-bullet ::tk/ordered-bullet} (peek-type %))
-        nested         (and (> (:current parser) list-start-idx) (nest-list? parser))
+        nested         (and (> (:current parser) list-start-idx)
+                            (or
+                              ;; we could be nesting with current list context (`ol` or `ul`)...
+                              (nest-list? parser)
+                              ;; ... or we might have another context (e.g., `ul` instead of `ol`)
+                              (new-list? parser)))
         inner-parser   (if nested
                          (parse-list parser)
                          (parse-until (some-fn new-list-item? end-list?)
@@ -206,9 +211,6 @@
                    (if nested
                      (get-in inner-parser [:output :hiccup])
                      (into [:li] (get-in inner-parser [:output :hiccup])))))))
-
-(comment
-  (into [] [:ol [:li 1] [:li 2]]))
 
 (defn parse-list
   [parser]
