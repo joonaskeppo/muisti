@@ -89,7 +89,11 @@
   [{:keys [input token parse-fn]}]
   (let [[tags content] (extract input token [::vector (parse-fn {:modifier :inline})])]
     (-> content
-        (update :attrs deep-merge {:tags #{tags}}))))
+        (update :attrs deep-merge {:tags #{tags}})
+        (update :hiccup (fn [inner]
+                          (into inner
+                                (for [tag tags]
+                                  [:span {:class "mu-tag"} (str tag)])))))))
 
 (defmethod parse :default
   [{:keys [type input token parse-fn]}]

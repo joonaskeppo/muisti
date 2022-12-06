@@ -192,7 +192,8 @@
 (defn parse-list-item
   [parser list-start-idx]
   (let [pre-list-item? #(#{::tk/tab ::tk/unordered-bullet ::tk/ordered-bullet} (peek-type %))
-        inner-parser   (if (and (> (:current parser) list-start-idx) (nest-list? parser))
+        nested         (and (> (:current parser) list-start-idx) (nest-list? parser))
+        inner-parser   (if nested
                          (parse-list parser)
                          (parse-until (some-fn new-list-item? end-list?)
                                       (advance-while parser pre-list-item?)
@@ -200,7 +201,14 @@
     (-> parser
         (assoc :current (:current inner-parser))
         (update-in [:output :attrs] deep-merge (get-in inner-parser [:output :attrs]))
-        (update-in [:output :hiccup] conj (into [:li] (get-in inner-parser [:output :hiccup]))))))
+        (update-in [:output :hiccup]
+                   (if nested (comp vec into) conj)
+                   (if nested
+                     (get-in inner-parser [:output :hiccup])
+                     (into [:li] (get-in inner-parser [:output :hiccup])))))))
+
+(comment
+  (into [] [:ol [:li 1] [:li 2]]))
 
 (defn parse-list
   [parser]
@@ -300,14 +308,17 @@
         inner            (parse lexeme env)]
     (-> parser
         advance
+        (update-in [:output :attrs] deep-merge (:attrs inner))
         (update-in [:output :hiccup] conj (into [:blockquote] (children (:hiccup inner)))))))
 
 (defmethod parse-token-group ::tk/heading
-  [parser]
-  (let [{:keys [lexeme value]} (peek parser)]
+  [{:keys [env] :as parser}]
+  (let [{:keys [lexeme value]} (peek parser)
+        inner                  (parse lexeme env)]
     (-> parser
         advance
-        (update-in [:output :hiccup] conj [(keyword (str "h" value)) lexeme]))))
+        (update-in [:output :attrs] deep-merge (:attrs inner))
+        (update-in [:output :hiccup] conj [(keyword (str "h" value)) (-> inner :hiccup children first second)]))))
 
 (defmethod parse-token-group ::tk/code-block
   [parser]

@@ -98,7 +98,7 @@
   (testing "with simple nested unordered list"
     (let [output (parser/parse "- Hello\n\t- There")]
       (is (empty? (:attrs output)))
-      (is (= [:div [:p [:ul [:li "Hello"] [:li [:ul [:li "There"]]]]]]
+      (is (= [:div [:p [:ul [:li "Hello"] [:ul [:li "There"]]]]]
              (:hiccup output)))))
   (testing "with longer nested unordered list"
     (let [src    (read-project-file "dev-resources" "unordered-list-items-2.mu")
@@ -107,18 +107,18 @@
       (is (= [:div [:p
                     [:ul
                      [:li "Things to say"]
-                     [:li [:ul
-                           [:li "More things here"]]]]
+                     [:ul
+                      [:li "More things here"]]]
                     [:ul
                      [:li "Back to original"]
-                     [:li [:ul
-                           [:li "2"]
-                           [:li "3"]]]]]]
+                     [:ul
+                      [:li "2"]
+                      [:li "3"]]]]]
              (:hiccup output)))))
   (testing "with nested ordered list"
     (let [output (parser/parse "1. Hello\n\t1. There")]
       (is (empty? (:attrs output)))
-      (is (= [:div [:p [:ol [:li "Hello"] [:li [:ol [:li "There"]]]]]]
+      (is (= [:div [:p [:ol [:li "Hello"] [:ol [:li "There"]]]]]
              (:hiccup output))))))
 
 (deftest test-code-blocks
@@ -127,6 +127,9 @@
       (is (empty? (:attrs output)))
       (is (= [:div [:pre "Multiline\ncode\nblock"]]
              (:hiccup output))))))
+
+;; TODO: add tests for incomplete/invalid components!
+;; NOTE: this seems to currently cause the parser to hang...
 
 (deftest test-components
   ;; TODO: trying to parse a :link without `root-path` should return an error
@@ -139,8 +142,11 @@
       (is (= {:links #{{:note/id ["literature" "nineteen-eighty-four"]}}}
              (:attrs output)))))
   (testing "with :tag component"
-    (let [output          (parser/parse "[:tag [:test/tag :other/tag] *Orwell's /Majestic/ Book*]")]
-      (is (= [:div [:p [:span [:strong "Orwell's " [:em "Majestic"] " Book"]]]]
+    (let [output (parser/parse "[:tag [:test/tag :other/tag] *Orwell's /Majestic/ Book*]")]
+      (is (= [:div [:p [:span
+                        [:strong "Orwell's " [:em "Majestic"] " Book"]
+                        [:span {:class "mu-tag"} ":test/tag"]
+                        [:span {:class "mu-tag"} ":other/tag"]]]]
              (:hiccup output)))
       (is (= {:tags #{[:test/tag :other/tag]}}
              (:attrs output)))))
@@ -152,10 +158,10 @@
               :tags  #{[:nesting :wow]}}
              (:attrs output)))
       (is (= [:div [:p [:span
-                        [:a {:href "/notes/lit/book"}
-                         [:em "Book"]]
-                        [:a {:href "/notes/another/thing"}
-                         "My Thing"]]]]
+                        [:a {:href "/notes/lit/book"} [:em "Book"]]
+                        [:a {:href "/notes/another/thing"} "My Thing"]
+                        [:span {:class "mu-tag"} ":nesting"]
+                        [:span {:class "mu-tag"} ":wow"]]]]
              (:hiccup output)))))
   (testing "with hiccup fallback component, without props"
     (let [output (parser/parse "[:mark /highlighted/]")]
