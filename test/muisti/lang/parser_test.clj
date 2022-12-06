@@ -123,12 +123,12 @@
                         [:ol
                          [:li "Hey"]
                          [:li "There"]]]]]
-             (:hiccup output))))
-    (testing "with nested ordered list"
-      (let [output (parser/parse "1. Hello\n\t1. There")]
-        (is (empty? (:attrs output)))
-        (is (= [:div [:p [:ol [:li "Hello"] [:ol [:li "There"]]]]]
-               (:hiccup output))))))
+             (:hiccup output)))))
+  (testing "with nested ordered list"
+    (let [output (parser/parse "1. Hello\n\t1. There")]
+      (is (empty? (:attrs output)))
+      (is (= [:div [:p [:ol [:li "Hello"] [:ol [:li "There"]]]]]
+             (:hiccup output))))))
 
 (deftest test-code-blocks
   (testing "with multiline code block"
