@@ -1,4 +1,4 @@
-{:paths   ["src" "dev-resources"]
+{:paths   ["src" "dev-resources" "test"]
  :aliases {:test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.69.1069"}}
                   :main-opts  ["-m" "kaocha.runner"]}
            :xtdb {:extra-deps {com.xtdb/xtdb-core    {:mvn/version "1.21.0"}
