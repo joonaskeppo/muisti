@@ -87,13 +87,19 @@
 
 (defmethod parse :tag
   [{:keys [input token parse-fn]}]
-  (let [[tags content] (extract input token [::vector (parse-fn {:modifier :inline})])]
-    (-> content
-        (update :attrs deep-merge {:tags #{tags}})
-        (update :hiccup (fn [inner]
-                          (into inner
-                                (for [tag tags]
-                                  [:span {:class "mu-tag"} (str tag)])))))))
+  (let [extractor-fns         [[::vector (parse-fn {:modifier :inline})] [::vector]]
+        [tags content]        (extract input token extractor-fns)
+        {:keys [attrs hiccup]
+         :as tag-content}     {:attrs  {:tags (set tags)}
+                               :hiccup (for [tag tags]
+                                         [:span {:class "mu-tag"} (subs (str tag) 1)])}]
+    (if-not content
+      (-> tag-content
+          (update :hiccup #(into [:span] %)))
+      (-> content
+          (update :attrs deep-merge attrs)
+          (update :hiccup (fn [inner]
+                            (into (or inner [:span]) hiccup)))))))
 
 (defmethod parse :default
   [{:keys [type input token parse-fn]}]
