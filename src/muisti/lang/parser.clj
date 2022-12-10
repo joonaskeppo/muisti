@@ -180,8 +180,8 @@
   [[token-type html-elt] parser]
   (let [inner-parser (parse-until (fn [inner-parser]
                                     (= token-type (peek-type inner-parser)))
-                                   (advance parser)
-                                   "inline formatter")]
+                                  (advance parser)
+                                  "inline formatter")]
     (-> parser
         (update-in [:output :hiccup] conj (into [html-elt] (get-in inner-parser [:output :hiccup])))
         (update-in [:output :attrs] deep-merge (get-in inner-parser [:output :attrs]))
@@ -195,9 +195,9 @@
         nested         (and (> (:current parser) list-start-idx)
                             (or
                               ;; we could be nesting with current list context (`ol` or `ul`)...
-                              (nest-list? parser)
+                             (nest-list? parser)
                               ;; ... or we might have another context (e.g., `ul` instead of `ol`)
-                              (new-list? parser)))
+                             (new-list? parser)))
         inner-parser   (if nested
                          (parse-list parser)
                          (parse-until (some-fn new-list-item? end-list?)
@@ -280,7 +280,7 @@
 (defmethod parse-token-group :paragraph
   [parser]
   (let [parser       (advance-while parser #(= ::tk/newline (peek-type %)))
-        inner-parser (parse-until end-nested-context? parser "paragraph")  
+        inner-parser (parse-until end-nested-context? parser "paragraph")
         inner-hiccup (combine-texts (get-in inner-parser [:output :hiccup]))]
     (-> parser
         (assoc :current (:current inner-parser))
@@ -316,11 +316,13 @@
 (defmethod parse-token-group ::tk/heading
   [{:keys [env] :as parser}]
   (let [{:keys [lexeme value]} (peek parser)
-        inner                  (parse lexeme env)]
+        inner                  (parse lexeme env)
+        heading-hiccup         (into [(keyword (str "h" value))]
+                                     (-> inner :hiccup children first children))]
     (-> parser
         advance
         (update-in [:output :attrs] deep-merge (:attrs inner))
-        (update-in [:output :hiccup] conj [(keyword (str "h" value)) (-> inner :hiccup children first second)]))))
+        (update-in [:output :hiccup] conj heading-hiccup))))
 
 (defmethod parse-token-group ::tk/code-block
   [parser]

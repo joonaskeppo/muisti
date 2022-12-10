@@ -160,6 +160,12 @@
              (dissoc (:attrs output) :muisti.meta/tags)))
       (is (= 1 (get-in output [:attrs :muisti.meta/tags :other/tag 0 :line]))
                (get-in output [:attrs :muisti.meta/tags :test/tag 0 :line]))))
+  (testing "with :tag inside heading"
+    (let [output (parser/parse "# Test[:tag :some/tag]")]
+      (is (= [:div
+              [:h1 "Test" [:span {:class "mu-tags-group"}
+                           [:span {:class "mu-tag"} ":some/tag"]]]]
+             (:hiccup output)))))
   (testing "with :link components inside :tag component"
     (let [output (parser/parse "\n\n[:tag :nesting :wow]\n[:link [lit book] /Book/]\n[:link [another thing] My Thing]"
                                {:root-path "/notes/"})]
