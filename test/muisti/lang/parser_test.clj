@@ -151,32 +151,28 @@
       (is (= {:links #{{:note/id ["literature" "nineteen-eighty-four"]}}}
              (:attrs output)))))
   (testing "with :tag component"
-    (let [output (parser/parse "[:tag [:test/tag :other/tag] *Orwell's /Majestic/ Book*]")]
-      (is (= [:div [:p [:span
-                        [:strong "Orwell's " [:em "Majestic"] " Book"]
-                        [:span {:class "mu-tag"} "test/tag"]
-                        [:span {:class "mu-tag"} "other/tag"]]]]
+    (let [output (parser/parse "[:tag :test/tag :other/tag]")]
+      (is (= [:div [:p [:span {:class "mu-tags-group"}
+                        [:span {:class "mu-tag"} ":test/tag"]
+                        [:span {:class "mu-tag"} ":other/tag"]]]]
              (:hiccup output)))
       (is (= {:tags #{:test/tag :other/tag}}
-             (:attrs output)))))
-  (testing "with :tag component without content"
-    (let [{:keys [attrs hiccup]} (parser/parse "[:tag [:my :tag]]")]
-      (is (= attrs {:tags #{:my :tag}}))
-      (is (= hiccup [:div [:p [:span
-                               [:span {:class "mu-tag"} "my"]
-                               [:span {:class "mu-tag"} "tag"]]]]))))
+             (dissoc (:attrs output) :muisti.meta/tags)))
+      (is (= 1 (get-in output [:attrs :muisti.meta/tags :other/tag 0 :line]))
+               (get-in output [:attrs :muisti.meta/tags :test/tag 0 :line]))))
   (testing "with :link components inside :tag component"
-    (let [output     (parser/parse "\n\n[:tag [:nesting :wow]\n\n[:link [lit book] /Book/]\n[:link [another thing] My Thing]]"
-                                   {:root-path "/notes/"})]
+    (let [output (parser/parse "\n\n[:tag :nesting :wow]\n[:link [lit book] /Book/]\n[:link [another thing] My Thing]"
+                               {:root-path "/notes/"})]
       (is (= {:links #{{:note/id ["lit" "book"]}
                        {:note/id ["another" "thing"]}}
               :tags  #{:nesting :wow}}
-             (:attrs output)))
-      (is (= [:div [:p [:span
-                        [:a {:href "/notes/lit/book"} [:em "Book"]]
-                        [:a {:href "/notes/another/thing"} "My Thing"]
-                        [:span {:class "mu-tag"} "nesting"]
-                        [:span {:class "mu-tag"} "wow"]]]]
+             (dissoc (:attrs output) :muisti.meta/tags)))
+      (is (= [:div [:p
+                    [:span {:class "mu-tags-group"}
+                     [:span {:class "mu-tag"} ":nesting"]
+                     [:span {:class "mu-tag"} ":wow"]]
+                    [:a {:href "/notes/lit/book"} [:em "Book"]]
+                    [:a {:href "/notes/another/thing"} "My Thing"]]]
              (:hiccup output)))))
   (testing "with hiccup fallback component, without props"
     (let [output (parser/parse "[:mark /highlighted/]")]
@@ -189,8 +185,8 @@
       (is (= [:div [:p [:mark {:class "classy"} [:em "highlighted"]]]]
              (:hiccup output)))))
   (testing "with :link component inside hiccup fallback"
-    (let [output     (parser/parse "[:mark [:link [my thing] Book Notes]]"
-                                   {:root-path "/notes/"})]
+    (let [output (parser/parse "[:mark [:link [my thing] Book Notes]]"
+                               {:root-path "/notes/"})]
       (is (= {:links #{{:note/id ["my" "thing"]}}}
              (:attrs output)))
       (is (= [:div [:p [:mark

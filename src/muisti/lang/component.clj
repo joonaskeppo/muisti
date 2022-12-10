@@ -18,7 +18,11 @@
    ::map               (fn [{:keys [input]}]
                          (when-let [ext (edn/read-string input)]
                            (when (map? ext) ext)))
-   ::identity          (fn [{:keys [input]}] input)})
+   ::identity          (fn [{:keys [input]}] input)
+   ::&edn              (fn [{:keys [input]}]
+                          (->> (str/split input #" ")
+                               (filter (complement str/blank?))
+                               (mapv edn/read-string))) })
 
 (defn extract-input-with-single-pattern
   "Extracts input string with a single `extraction-fs` pattern vector"
@@ -86,20 +90,17 @@
                           (into [:a {:href (resolve-uri env to)}] inner))))))
 
 (defmethod parse :tag
-  [{:keys [input token parse-fn]}]
-  (let [extractor-fns         [[::vector (parse-fn {:modifier :inline})] [::vector]]
-        [tags content]        (extract input token extractor-fns)
-        {:keys [attrs hiccup]
-         :as tag-content}     {:attrs  {:tags (set tags)}
-                               :hiccup (for [tag tags]
-                                         [:span {:class "mu-tag"} (subs (str tag) 1)])}]
-    (if-not content
-      (-> tag-content
-          (update :hiccup #(into [:span] %)))
-      (-> content
-          (update :attrs deep-merge attrs)
-          (update :hiccup (fn [inner]
-                            (into (or inner [:span]) hiccup)))))))
+  [{:keys [input token]}]
+  (let [extractor-fns [[::&edn]]
+        [tags]        (extract input token extractor-fns)]
+    {:attrs  {:tags             (set tags)
+              ;; generate mapping of tag -> tokens
+              :muisti.meta/tags (->> (distinct tags) ;; retain ordering
+                                     (map (fn [tag] [tag [token]]))
+                                     (into {}))}
+     :hiccup (into [:span {:class "mu-tags-group"} ]
+                   (for [tag tags]
+                     [:span {:class "mu-tag"} (str tag)]))}))
 
 (defmethod parse :default
   [{:keys [type input token parse-fn]}]
