@@ -125,39 +125,6 @@
     {:type ::tk/text :line 5 :lexeme "1.invalid item"}
     {:type ::tk/eof :line 6}]))
 
-(deftest test-formatters
-  (testing-tokens-as-equal-to
-   "formatted-text"
-   [{:type ::tk/text :lexeme "Text can have " :line 1}
-    {:type ::tk/bold :line 1}
-    {:type ::tk/text :lexeme "bold" :line 1}
-    {:type ::tk/bold :line 1}
-    {:type ::tk/text :lexeme ", " :line 1}
-    {:type ::tk/code-inline :lexeme "code" :line 1}
-    {:type ::tk/text :lexeme ", italic, or " :line 1}
-    {:type ::tk/strikethrough :line 1}
-    {:type ::tk/text :lexeme "strikethrough" :line 1}
-    {:type ::tk/strikethrough :line 1}
-    {:type ::tk/text :lexeme " formatters." :line 1}
-    {:type ::tk/newline :line 2}
-    {:type ::tk/text :lexeme "They can " :line 2}
-    {:type ::tk/bold :line 2}
-    {:type ::tk/text :lexeme "also be " :line 2}
-    {:type ::tk/strikethrough :line 2}
-    {:type ::tk/text :lexeme "nested", :line 2}
-    {:type ::tk/strikethrough :line 2}
-    {:type ::tk/bold :line 2}
-    {:type ::tk/eof :line 3}])
-  (testing-tokens-as-equal-to
-   "code"
-   [{:type ::tk/text :line 1 :lexeme "We can have "}
-    {:type ::tk/code-inline :line 1 :lexeme "multiline\ninline code."}
-    {:type ::tk/newline :line 3}
-    {:type ::tk/code-block :line 3 :lexeme "Multiline\ncode\nblocks"}
-    {:type ::tk/newline :line 8}
-    {:type ::tk/text :line 8 :lexeme "filler text"}
-    {:type ::tk/eof :line 9}]))
-
 (deftest test-escape-char
   (testing-tokens-as-equal-to
    "escape-char"

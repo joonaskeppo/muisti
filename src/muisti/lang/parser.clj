@@ -338,25 +338,6 @@
         advance
         (update-in [:output :hiccup] conj lexeme))))
 
-(defmethod parse-token-group ::tk/bold
-  [parser]
-  (parse-inline-formatter [::tk/bold :strong] parser))
-
-(defmethod parse-token-group ::tk/italic
-  [parser]
-  (parse-inline-formatter [::tk/italic :em] parser))
-
-(defmethod parse-token-group ::tk/strikethrough
-  [parser]
-  (parse-inline-formatter [::tk/strikethrough :del] parser))
-
-(defmethod parse-token-group ::tk/code-inline
-  [parser]
-  (let [{:keys [lexeme]} (peek parser)]
-    (-> parser
-        advance
-        (update-in [:output :hiccup] conj [:code lexeme]))))
-
 (defmethod parse-token-group ::tk/component
   [parser]
   (parse-component parser))

@@ -77,6 +77,13 @@
                                  "%s%s" "%s/%s")]
                    (format fmt-str (:root-path env) (str/join "/" to)))))
 
+(def formatter->hiccup
+  "Syntax sugar for text formatters"
+  {:b :strong
+   :i :em
+   :d :del
+   :u :u})
+
 (defmulti parse
   (fn [{:keys [type]}] type))
 
@@ -107,7 +114,8 @@
   (let [ext     (extract input token [[::map (parse-fn {:modifier :verbatim})]
                                       [(parse-fn {:modifier :verbatim})]])
         props   (when (= 2 (count ext)) (first ext))
-        content (peek ext)]
+        content (peek ext)
+        type    (get formatter->hiccup type type)] ;; by default, assume sugar
     (update content :hiccup (fn [inner]
                               (if props
                                 (into [type props] inner)

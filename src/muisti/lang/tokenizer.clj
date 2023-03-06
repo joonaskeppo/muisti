@@ -175,30 +175,10 @@
   (and (re-find (:ordered-bullet regexes) (rem-src scanner))
        (empty? (get-non-blank-tokens scanner))))
 
-(defn formatting?
-  "Inline formatting character, `ch`?
-  Ignored if preceded by escape character."
-  [ch]
-  (fn [scanner]
-    (and (= ch (current-char scanner))
-         (not= \\ (previous-char scanner)))))
-
-(def bold?
-  (formatting? \*))
-
-(def italic?
-  (formatting? \/))
-
-(def code-inline?
-  (formatting? \`))
-
-(def strikethrough?
-  (formatting? \~))
-
 (defn code-block?
-  [scanner]
+    [scanner]
   ;; TODO: should check for newline before ticks?
-  (= "```" (apply str (take 3 (rem-src scanner)))))
+    (= "```" (apply str (take 3 (rem-src scanner)))))
 
 ;; --- scanning ---
 
@@ -295,22 +275,6 @@
       advance ;; skip over '.'
       (advance-while whitespace?)))
 
-(defn scan-bold [scanner]
-  (add-token (advance scanner) {:type ::bold}))
-
-(defn scan-italic [scanner]
-  (add-token (advance scanner) {:type ::italic}))
-
-(defn scan-strikethrough [scanner]
-  (add-token (advance scanner) {:type ::strikethrough}))
-
-(defn scan-code-inline [scanner]
-  (let [out-str        (read-delimited (rem-src scanner) "`" "`" {:drop-delimiters true})
-        delimiters-len 2]
-    (-> scanner
-        (add-token {:type ::code-inline :lexeme out-str})
-        (advance (+ delimiters-len (count out-str))))))
-
 (defn scan-code-block [scanner]
   (let [out-str        (read-delimited (rem-src scanner) "```\n" "\n```" {:drop-delimiters true})
         delimiters-len 8]
@@ -331,10 +295,6 @@
              code-block?       (scan-code-block scanner)
              unordered-bullet? (scan-unordered-bullet scanner)
              ordered-bullet?   (scan-ordered-bullet scanner)
-             bold?             (scan-bold scanner)
-             italic?           (scan-italic scanner)
-             code-inline?      (scan-code-inline scanner)
-             strikethrough?    (scan-strikethrough scanner)
              some?             (scan-text scanner)))
 
 (defn scan-tokens

@@ -5,9 +5,6 @@
 (deftest test-read-delimited
   (testing "with invalid input"
     (is (nil? (read-delimited "tasdas d `asdasd` asdasd" "`" "`"))))
-  (testing "with inline code"
-    (is (= "`this is a code`"
-           (read-delimited "`this is a code` bleep bloop `more code but ignored`" "`" "`"))))
   (testing "with inline code containing escaped delimiters"
     (is (= "`this \\`is a \\`code`"
            (read-delimited "`this \\`is a \\`code` bleep bloop" "`" "`"))))

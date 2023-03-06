@@ -31,7 +31,7 @@
       (is (= [:div [:h1 "first"] [:h2 "second"] [:h3 "third"] [:h1 "fourth"]]
              (:hiccup output))))))
 
-(deftest test-text-formatters
+(deftest test-basic-text
   (testing "with simple unformatted text"
     (let [output (parser/parse "Hello there. Another sentence.")]
       (is (empty? (:attrs output)))
@@ -46,26 +46,6 @@
     (let [output (parser/parse "Hello there.\n\nAnother paragraph.\n\n\nThird paragraph.")]
       (is (empty? (:attrs output)))
       (is (= [:div [:p "Hello there."] [:p "Another paragraph."] [:p "Third paragraph."]]
-             (:hiccup output)))))
-  (testing "with bold"
-    (let [output (parser/parse "Hello with *bold*.")]
-      (is (empty? (:attrs output)))
-      (is (= [:div [:p "Hello with " [:strong "bold"] "."]]
-             (:hiccup output)))))
-  (testing "with italics"
-    (let [output (parser/parse "Hello with /italics/.")]
-      (is (empty? (:attrs output)))
-      (is (= [:div [:p "Hello with " [:em "italics"] "."]]
-             (:hiccup output)))))
-  (testing "with strikethrough"
-    (let [output (parser/parse "Hello with ~strikethrough~.")]
-      (is (empty? (:attrs output)))
-      (is (= [:div [:p "Hello with " [:del "strikethrough"] "."]]
-             (:hiccup output)))))
-  (testing "with inline code"
-    (let [output (parser/parse "Hello with `code`.")]
-      (is (empty? (:attrs output)))
-      (is (= [:div [:p "Hello with " [:code "code"] "."]]
              (:hiccup output))))))
 
 (deftest test-lists
@@ -77,11 +57,11 @@
                         [:li "World"]]]]
              (:hiccup output)))))
   (testing "with flat unordered list with formatting"
-    (let [output (parser/parse "- Hello /there/\n- *World*")]
+    (let [output (parser/parse "- Hello [:b there]\n- [:i World]")]
       (is (empty? (:attrs output)))
       (is (= [:div [:p [:ul
-                        [:li "Hello " [:em "there"]]
-                        [:li [:strong "World"]]]]]
+                        [:li "Hello " [:strong "there"]]
+                        [:li [:em "World"]]]]]
              (:hiccup output)))))
   (testing "with flat ordered list"
     (let [output (parser/parse "1. Hello\n2. World")]
@@ -89,7 +69,7 @@
       (is (= [:div [:p [:ol [:li "Hello"] [:li "World"]]]]
              (:hiccup output)))))
   (testing "with flat ordered list with formatting"
-    (let [output (parser/parse "1. Hello /there/\n2. *World*")]
+    (let [output (parser/parse "1. Hello [:i there]\n2. [:b World]")]
       (is (empty? (:attrs output)))
       (is (= [:div [:p [:ol
                         [:li "Hello " [:em "there"]]
@@ -143,7 +123,7 @@
 (deftest test-components
   ;; TODO: trying to parse a :link without `root-path` should return an error
   (testing "with :link component"
-    (let [output          (parser/parse "[:link [literature nineteen-eighty-four] *Orwell's /Majestic/ Book*]"
+    (let [output          (parser/parse "[:link [literature nineteen-eighty-four] [:b Orwell's [:i Majestic] Book]]"
                                         {:root-path "/notes/"})]
       (is (= [:div [:p [:a {:href "/notes/literature/nineteen-eighty-four"}
                         [:strong "Orwell's " [:em "Majestic"] " Book"]]]]
@@ -167,7 +147,7 @@
                            [:span {:class "mu-tag"} ":some/tag"]]]]
              (:hiccup output)))))
   (testing "with :link components inside :tag component"
-    (let [output (parser/parse "\n\n[:tag :nesting :wow]\n[:link [lit book] /Book/]\n[:link [another thing] My Thing]"
+    (let [output (parser/parse "\n\n[:tag :nesting :wow]\n[:link [lit book] [:i Book]]\n[:link [another thing] My Thing]"
                                {:root-path "/notes/"})]
       (is (= {:links #{{:note/id ["lit" "book"]}
                        {:note/id ["another" "thing"]}}
@@ -181,12 +161,12 @@
                     [:a {:href "/notes/another/thing"} "My Thing"]]]
              (:hiccup output)))))
   (testing "with hiccup fallback component, without props"
-    (let [output (parser/parse "[:mark /highlighted/]")]
+    (let [output (parser/parse "[:mark [:em highlighted]]")]
       (is (empty? (:attrs output)))
       (is (= [:div [:p [:mark [:em "highlighted"]]]]
              (:hiccup output)))))
   (testing "with hiccup fallback component, with props"
-    (let [output (parser/parse "[:mark {:class \"classy\"} /highlighted/]")]
+    (let [output (parser/parse "[:mark {:class \"classy\"} [:em highlighted]]")]
       (is (empty? (:attrs output)))
       (is (= [:div [:p [:mark {:class "classy"} [:em "highlighted"]]]]
              (:hiccup output)))))
@@ -210,7 +190,7 @@
 
 (deftest test-blockquotes
   (testing "with single formatted blockquote"
-    (let [output (parser/parse "> /first/ line\n> *second*")]
+    (let [output (parser/parse "> [:i first] line\n> [:b second]")]
       (is (empty? (:attrs output)))
       ;; blockquotes don't break paragraphs due to single newlines
       (is (= [:div [:blockquote [:p
