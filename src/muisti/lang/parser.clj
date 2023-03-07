@@ -176,17 +176,6 @@
                                (assoc :output {})
                                parse-token-group))))))
 
-(defn parse-inline-formatter
-  [[token-type html-elt] parser]
-  (let [inner-parser (parse-until (fn [inner-parser]
-                                    (= token-type (peek-type inner-parser)))
-                                  (advance parser)
-                                  "inline formatter")]
-    (-> parser
-        (update-in [:output :hiccup] conj (into [html-elt] (get-in inner-parser [:output :hiccup])))
-        (update-in [:output :attrs] deep-merge (get-in inner-parser [:output :attrs]))
-        (assoc :current (inc (:current inner-parser))))))
-
 (declare parse-list parse-list-item)
 
 (defn parse-list-item
@@ -246,7 +235,7 @@
                                             :parse-fn (fn [args]
                                                         (fn [{:keys [input] :as env*}]
                                                           (->> (dissoc env* :input)
-                                                               (deep-merge env args)
+                                                               (deep-merge {:disallow-parsers #{:front-matter}} env args)
                                                                (parse input))))})]
     (-> parser
         advance
@@ -359,7 +348,7 @@
   ([src]
    (parse src nil))
   ([src env]
-   (let [tokens (tk/scan-tokens src {:line (get env :line 1)})
+   (let [tokens (tk/scan-tokens src {:env env :line (get env :line 1)})
          parser (make-parser {:env     (dissoc env :line)
                               :tokens  tokens
                               :current 0

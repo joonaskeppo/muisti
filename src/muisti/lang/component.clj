@@ -82,7 +82,8 @@
   {:b :strong
    :i :em
    :d :del
-   :u :u})
+   :u :u
+   :c :code})
 
 (defmulti parse
   (fn [{:keys [type]}] type))

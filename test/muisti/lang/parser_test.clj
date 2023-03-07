@@ -186,6 +186,13 @@
              (:attrs output)))
       (is (= [:div
               [:p "Test link: " [:a {:href "/notes/projects/mu"} "my link"] "!"]]
+             (:hiccup output)))))
+  ;; fix for regex issue
+  (testing "with keyword inside component"
+    (let [output (parser/parse "Should not bork: [:code :keyword]!"
+                               {:root-path "/notes/"})]
+      (is (= [:div
+              [:p "Should not bork: " [:code ":keyword"] "!"]]
              (:hiccup output))))))
 
 (deftest test-blockquotes

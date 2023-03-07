@@ -9,15 +9,12 @@
   (syms->map type lexeme line value))
 
 (defn make-scanner
-  [{:keys [src start current line errors]
-    :or   {start 0 current 0 line 1 errors []}}]
-  (syms->map src start current line errors))
+  [{:keys [env src start current line errors]
+    :or   {env {} start 0 current 0 line 1 errors []}}]
+  (syms->map src env start current line errors))
 
 (defn current-char [{:keys [current src] :as _scanner}]
   (get src current))
-
-(defn previous-char [{:keys [current src] :as _scanner}]
-  (get src (dec current)))
 
 (defn at-end? [{:keys [current src]}]
   (>= current (count src)))
@@ -103,28 +100,38 @@
 
 ;; --- predicates ---
 
+(defn disallow? [scanner type]
+  (contains? (set (get-in scanner [:env :disallow-parsers])) type))
+
+(def allow? (complement disallow?))
+
 (defn nothing-left? [scanner]
-  (str/blank? (rem-src scanner)))
+  (when (allow? scanner :nothing-left)
+    (str/blank? (rem-src scanner))))
 
 (defn blank? [scanner]
-  (when-let [ch (current-char scanner)]
-    (str/blank? (str ch))))
+  (when (allow? scanner :blank)
+    (when-let [ch (current-char scanner)]
+      (str/blank? (str ch)))))
 
 (defn numeric? [scanner]
-  (when-let [ch (current-char scanner)]
-    (try
-      (Integer/parseInt (str ch))
-      (catch Exception _ false))))
+  (when (allow? scanner :numeric)
+    (when-let [ch (current-char scanner)]
+      (try
+        (Integer/parseInt (str ch))
+        (catch Exception _ false)))))
 
 (defn newline? [scanner]
-  (= \newline (current-char scanner)))
+  (when (allow? scanner :newline)
+    (= \newline (current-char scanner))))
 
 (def whitespace?
   (every-pred blank? (complement newline?)))
 
 (defn front-matter? [{:keys [tokens] :as scanner}]
-  (and (not (some #(not= ::newline (:type %)) tokens))
-       (extract-front-matter (str/triml (rem-src scanner)))))
+  (when (allow? scanner :front-matter)
+    (and (not (some #(not= ::newline (:type %)) tokens))
+         (extract-front-matter (str/triml (rem-src scanner))))))
 
 (def regexes
   "Some regexes to check for token existence, *not* for parsing"
@@ -140,45 +147,53 @@
   "If a comment token encountered on current line.
   No content tokens can be found on line."
   [scanner]
-  (and (= \; (current-char scanner))
-       (empty? (get-non-blank-tokens scanner))))
+  (when (allow? scanner :comment)
+    (and (= \; (current-char scanner))
+         (empty? (get-non-blank-tokens scanner)))))
 
 (defn blockquote?
   "Blockquote token next?"
   [scanner]
-  (and (re-find (:blockquote regexes) (rem-src scanner))
-       (empty? (get-non-blank-tokens scanner))))
+  (when (allow? scanner :blockquote)
+    (and (re-find (:blockquote regexes) (rem-src scanner))
+         (empty? (get-non-blank-tokens scanner)))))
 
 (defn tab?
   "A 'tab' at start of blank line?"
   [scanner]
-  (and (re-find (:tab regexes) (rem-src scanner))
-       (empty? (get-non-blank-tokens scanner))))
+  (when (allow? scanner :tab)
+    (and (re-find (:tab regexes) (rem-src scanner))
+         (empty? (get-non-blank-tokens scanner)))))
 
 (defn component?
   "Hiccup-looking 'component'?"
   [scanner]
-  (re-find (:component regexes) (rem-src scanner)))
+  (when (allow? scanner :component)
+    (re-find (:component regexes) (rem-src scanner))))
 
 (defn heading?
   [scanner]
-  (and (re-find (:heading regexes) (rem-src scanner))
-       (empty? (get-non-blank-tokens scanner))))
+  (when (allow? scanner :heading)
+    (and (re-find (:heading regexes) (rem-src scanner))
+         (empty? (get-non-blank-tokens scanner)))))
 
 (defn unordered-bullet?
   [scanner]
-  (and (re-find (:unordered-bullet regexes) (rem-src scanner))
-       (empty? (get-non-blank-tokens scanner))))
+  (when (allow? scanner :unordered-bullet)
+    (and (re-find (:unordered-bullet regexes) (rem-src scanner))
+         (empty? (get-non-blank-tokens scanner)))))
 
 (defn ordered-bullet?
   [scanner]
-  (and (re-find (:ordered-bullet regexes) (rem-src scanner))
-       (empty? (get-non-blank-tokens scanner))))
+  (when (allow? scanner :ordered-bullet)
+    (and (re-find (:ordered-bullet regexes) (rem-src scanner))
+         (empty? (get-non-blank-tokens scanner)))))
 
 (defn code-block?
-    [scanner]
+  [scanner]
   ;; TODO: should check for newline before ticks?
-    (= "```" (apply str (take 3 (rem-src scanner)))))
+  (when (allow? scanner :code-block)
+    (= "```" (apply str (take 3 (rem-src scanner))))))
 
 ;; --- scanning ---
 
@@ -300,8 +315,8 @@
 (defn scan-tokens
   ([src]
    (scan-tokens src {:line 1}))
-  ([src {:keys [line]}]
-   (loop [{:keys [current] :as scanner} (make-scanner {:src src :line line})]
+  ([src {:keys [env line]}]
+   (loop [{:keys [current] :as scanner} (make-scanner {:env env :src src :line line})]
      (if (at-end? scanner)
        (-> scanner (add-token {:type ::eof}) :tokens reverse)
        (recur (-> scanner (assoc :start current) scan-token))))))
